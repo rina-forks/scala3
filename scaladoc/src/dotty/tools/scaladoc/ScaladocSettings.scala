@@ -65,7 +65,10 @@ class ScaladocSettings extends SettingGroup with AllScalaSettings:
     BooleanSetting(RootSetting, "groups", "Group similar functions together (based on the @group annotation)", false)
 
   val visibilityPrivate: Setting[Boolean] =
-    BooleanSetting(RootSetting, "private", "Show all types and members. Unless specified, show only public and protected types and members.", false)
+    BooleanSetting(RootSetting, "private", "Show private and protected types and members. By default, these members will be omitted.", false)
+
+  val visibilityProtected: Setting[Boolean] =
+    BooleanSetting(RootSetting, "protected", "Show protected types and members. By default, these members will be omitted.", false)
 
   val docCanonicalBaseUrl: Setting[String] =
     StringSetting(
