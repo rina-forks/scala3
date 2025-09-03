@@ -470,7 +470,7 @@ trait ClassLikeSupport:
       symbol.getAnnotations(),
       variancePrefix,
       normalizedName,
-      symbol.dri,
+      symbol.dri.withNoExternalLink,
       signature,
       isCaptureVar,
     )
