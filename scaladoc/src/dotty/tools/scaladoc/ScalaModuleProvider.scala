@@ -45,6 +45,7 @@ object ScalaModuleProvider:
 
     val transformers = List(
       ImplicitMembersExtensionTransformer(),
+      DisambiguateTransformer(),
       InheritanceInformationTransformer(),
       SealedMarksGraphTransformer()
     )
