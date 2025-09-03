@@ -5,16 +5,21 @@ object DisambiguateTransformer {
   object A
 }
 
+class X {
+  object A
+}
+
 class DisambiguateTransformer(using DocContext) extends (Module => Module):
   override def apply(original: Module): Module =
     original.updateMembers {
-      case m if m.needsOwnPage => disambiguateMember(m)
+      case m if m.needsOwnPage => disambiguateMember(original, m)
       case m => m
     }
 
   object A2
 
   val x = DisambiguateTransformer.A
+  val y = X().A
 
   extension (x: TermParameterList) {
     def flattenSignatures = x.parameters.map(_.signature)
@@ -56,7 +61,7 @@ class DisambiguateTransformer(using DocContext) extends (Module => Module):
       ++: m.knownChildren.map(_.signature)
   }
 
-  private def disambiguateMember(m: Member): Member = {
+  private def disambiguateMember(original: Module, m: Member): Member = {
     if (!m.fullName.contains("DisambiguateTransformer")) {
       return m
     }
@@ -77,6 +82,37 @@ class DisambiguateTransformer(using DocContext) extends (Module => Module):
       .groupMap(_._1)(_._2)
 
     println(grouped.mkString("\n"))
+    println(grouped.map { (k,v) => (k,v.toSeq.flatMap(v => original.members.get(v).map(_.fullName)))})
+
+    // returns an association list of DRI to its disambiguated name.
+    def disambiguateOneName(possible: Iterable[DRI]): Seq[(DRI, String)] = {
+      if (possible.size <= 1) {
+        return Nil
+      }
+      val (dris, names) = possible.toSeq.flatMap { v =>
+        original.members.get(v)
+          .map(_.fullName)
+          .filter(_.nonEmpty)
+          .map(v -> _)
+      }.unzip
+
+      val splitNames = names.map(_.split("\\.", -1).toSeq)
+      val maxLen = splitNames.map(_.size).max
+
+      val newNames = Iterator.range(0, maxLen).flatMap { tryLen =>
+        val newNames = splitNames.map(_.takeRight(tryLen))
+        Option.when(newNames.distinct.size == newNames.size) {
+          newNames.map(_.mkString("."))
+        }
+      }.nextOption
+
+      newNames match {
+        case Some(newNames) => dris.zip(newNames)
+        case _ => Nil
+      }
+    }
+
+    println(grouped.map(x => (x._1, disambiguateOneName(x._2))))
 
     m
   }
