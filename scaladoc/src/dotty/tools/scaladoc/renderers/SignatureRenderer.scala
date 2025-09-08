@@ -13,6 +13,7 @@ import java.nio.file.Paths
 // TODO merge it with new renderer
 trait SignatureRenderer:
   def currentDri: DRI
+  def typeName(dri: DRI): Option[String]
   def link(dri: DRI): Option[String]
 
   def renderElement(e: SignaturePart, modifiers: AppliedAttr*): AppliedTag = renderElementWith(e, modifiers*)
@@ -34,7 +35,7 @@ trait SignatureRenderer:
       renderLink(name, dri, attrs*)
     case Type(name, Some(dri)) =>
       val attrs = Seq(Attr("t") := "t") ++ modifiers
-      renderLink(name, dri, attrs*)
+      renderLink(typeName(dri).getOrElse(name), dri, attrs*)
     case Type(name, None) => span(Attr("t") := "t")(name)
     case Keyword(name) => span(Attr("t") := "k")(name)
     case Plain(name) => raw(name)

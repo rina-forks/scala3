@@ -17,7 +17,7 @@ case class Page(link: Link, content: Member | ResolvedTemplate | String, childre
     case t: ResolvedTemplate => t.hasFrame
     case _ => true
 
-abstract class Renderer(rootPackage: Member, val members: Map[DRI, Member], protected val extension: String = "html")(using ctx: DocContext)
+abstract class Renderer(rootPackage: Member, val members: Map[DRI, Member], protected val extension: String = "html", protected val mappings: (Member, DRI) => Option[String] = (_, _) => None)(using ctx: DocContext)
   extends SiteRenderer, Resources, Locations, Writer:
   protected val args = summon[DocContext].args
   val staticSite = summon[DocContext].staticSiteContext
@@ -128,6 +128,7 @@ abstract class Renderer(rootPackage: Member, val members: Map[DRI, Member], prot
     case m: Member =>
       val signatureRenderer = new SignatureRenderer:
         def currentDri: DRI = page.link.dri
+        def typeName(dri: DRI) = mappings(m, dri)
         def link(dri: DRI): Option[String] =
           dri.externalLink.orElse(
             Some(pathToPage(currentDri, dri)).filter(_ != UnresolvedLocationLink)

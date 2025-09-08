@@ -10,16 +10,30 @@ class X {
 }
 
 class DisambiguateTransformer(using DocContext) extends (Module => Module):
+
+  var disambiguatedMappings: Map[DRI, Map[DRI, String]] = Map.empty
+
+  trait Option {
+
+  }
+
+  def f: Option = ???
+
   override def apply(original: Module): Module =
-    original.updateMembers {
+    original.visitMembers {
       case m if m.needsOwnPage => disambiguateMember(original, m)
-      case m => m
+      case m => ()
     }
+    original
+
+  def mappingFunction(m: Member, dri: DRI) =
+    disambiguatedMappings.get(m.dri).flatMap(_.get(dri))
 
   object A2
 
   val x = DisambiguateTransformer.A
-  val y = X().A
+  val ecks = X()
+  val y = ecks.A
 
   extension (x: TermParameterList) {
     def flattenSignatures = x.parameters.map(_.signature)
@@ -61,9 +75,9 @@ class DisambiguateTransformer(using DocContext) extends (Module => Module):
       ++: m.knownChildren.map(_.signature)
   }
 
-  private def disambiguateMember(original: Module, m: Member): Member = {
+  private def disambiguateMember(original: Module, m: Member): Unit = {
     if (!m.fullName.contains("DisambiguateTransformer")) {
-      return m
+      return
     }
 
     println("hi " + m)
@@ -86,15 +100,16 @@ class DisambiguateTransformer(using DocContext) extends (Module => Module):
 
     // returns an association list of DRI to its disambiguated name.
     def disambiguateOneName(possible: Iterable[DRI]): Seq[(DRI, String)] = {
-      if (possible.size <= 1) {
-        return Nil
-      }
+      println(possible)
       val (dris, names) = possible.toSeq.flatMap { v =>
         original.members.get(v)
           .map(_.fullName)
           .filter(_.nonEmpty)
           .map(v -> _)
       }.unzip
+      if (names.size <= 1) {
+        return Nil
+      }
 
       val splitNames = names.map(_.split("\\.", -1).toSeq)
       val maxLen = splitNames.map(_.size).max
@@ -112,8 +127,9 @@ class DisambiguateTransformer(using DocContext) extends (Module => Module):
       }
     }
 
-    println(grouped.map(x => (x._1, disambiguateOneName(x._2))))
+    val remaps = grouped.map(x => (x._1, disambiguateOneName(x._2))).values.flatten
 
-    m
+    disambiguatedMappings = disambiguatedMappings + (m.dri -> remaps.toMap)
+
   }
 

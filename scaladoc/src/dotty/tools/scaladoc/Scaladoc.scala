@@ -240,7 +240,9 @@ object Scaladoc:
   private [scaladoc] def run(args: Args)(using ctx: CompilerContext): DocContext =
     given docContext: DocContext = new DocContext(args, ctx)
     val module = ScalaModuleProvider.mkModule()
-    new dotty.tools.scaladoc.renderers.HtmlRenderer(module.rootPackage, module.members).render()
+    val disambig = dotty.tools.scaladoc.transformers.DisambiguateTransformer()
+    disambig(module)
+    new dotty.tools.scaladoc.renderers.HtmlRenderer(module.rootPackage, module.members, mappings = disambig.mappingFunction).render()
     docContext.reportPathCompatIssues()
     report.inform("generation completed successfully")
     docContext

@@ -6,8 +6,8 @@ import dotty.tools.scaladoc.site._
 import org.jsoup.Jsoup
 import java.nio.file.Files
 
-class HtmlRenderer(rootPackage: Member, members: Map[DRI, Member])(using ctx: DocContext)
-  extends Renderer(rootPackage, members, extension = "html"):
+class HtmlRenderer(rootPackage: Member, members: Map[DRI, Member], mappings: (Member, DRI) => Option[String] = (_, _) => None)(using ctx: DocContext)
+  extends Renderer(rootPackage, members, extension = "html", mappings = mappings):
 
   override def pageContent(page: Page, parents: Vector[Link]): AppliedTag =
     val PageContent(content, toc) = renderContent(page)
